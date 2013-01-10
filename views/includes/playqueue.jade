@@ -1,0 +1,33 @@
+section#main
+    header.header
+        h1 Queue
+    article.queue-cover
+        figure.coverart
+            img(src='#')
+                img(src='#{playing.queuecover}')
+    section.playlist.queue
+        table
+            thead
+                tr
+                    th(align='center')
+                    th Track
+                    th Get
+                    th Artist
+                    th.right Time
+                    th Album
+                    th
+            tbody.tracklist
+                if locals.queue
+                    each track in queue.tracks
+                        tr(data-uri='#{track.uri}').track
+                            td.star
+                                a(href='#star').stared &#9733;
+                            td
+                                a(rel='song', href='#{track.uri}') #{track.name}
+                            td
+                                a(href='#') #{track.artist}
+                            td.right #{track.duration}
+                            td
+                                a(href='#') #{track.album}
+                            td
+                                

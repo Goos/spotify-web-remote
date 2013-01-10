@@ -1,0 +1,27 @@
+section#playlists
+    nav
+        ul.playlists
+            li
+                a(href='#').library Library
+            li
+                a(href='#').starred Starred 
+            if locals.playlists
+                each playlist in playlists
+                    li
+                        a(href='#').#{playlist.name} #{playlist.name}
+        ul.new
+            li
+                a(href='#').new-list New Playlist 
+    section#current
+        a(href='#')
+            figure
+                if locals.playing
+                    img(src='#{playing.cover}')
+                    figcaption
+                    strong.song #{playing.track}
+                    span.band #{playing.artist}
+                else
+                    img(src='/playing_default.jpg')
+                    figcaption
+                    strong.song No track
+                    span.band No artist

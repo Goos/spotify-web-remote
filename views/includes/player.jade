@@ -1,0 +1,17 @@
+footer#footer
+    section#player
+        button.prev Previous 
+        button.play Play 
+        button.next Next 
+        div#volume-container.high
+            input(type='range', max='100').volume
+        div#timeline-container
+            input(type='range', min='0')
+            span.duration 0:00
+            span.tracklength 0:00
+        div.playmode
+            input(type='checkbox')#shuffle
+            label(for='shuffle').shuffle Shuffle
+            input(type='checkbox')#repeat
+            label(for='repeat').repeat Repeat 
+            

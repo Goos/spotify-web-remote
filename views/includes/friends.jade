@@ -1,0 +1,9 @@
+aside#aside
+    section#friends
+        header
+            h2 People
+        ul
+            if locals.friends
+                each friend in friends
+                    li
+                        a(href='#') #{friend.name}

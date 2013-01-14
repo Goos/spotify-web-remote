@@ -172,7 +172,7 @@ body{
 	padding:0;
 	margin:0;
 }
-#main{
+#main, #search-section{
 	overflow:auto;
 	padding:20px 0;
 	position:absolute;
@@ -181,7 +181,11 @@ body{
 	right:200px;
 	bottom:0;
 }
-#main header{
+#main.is-hidden, #search-section.is-hidden {
+	display: none;
+}
+#main header,
+#search-section header{
 	margin:-20px 0 0;
 }
 #aside{
@@ -416,10 +420,12 @@ input[type=range]{
 	width:100%;
 	padding:0;
 	margin: 10px 0;
-  -webkit-appearance: none;
-  background:#333;
-  height:7px;
+	-webkit-appearance: none;
+	background:#333;
+	height:7px;
 	border-radius: 5px;
+	-moz-transition: all 1s linear;
+	-webkit-transition: all 1s linear;
 }
 input [type=range]::-webkit-slider-thumb {
     -webkit-appearance: none !important;
@@ -504,7 +510,7 @@ td{
 	text-shadow: 0 0 1px #fff;
 }
 @media (max-width:800px){
-	#main{
+	#main, #search-section{
 	right:0;
 	}
 	#aside{
@@ -512,7 +518,7 @@ td{
 	}
 }
 @media (max-width:500px){
-	#main{
+	#main, #search-section{
 	left:0;
 	}
 	#playlists{

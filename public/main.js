@@ -81,7 +81,7 @@ var Player = function (args) {
     var player = {
         $container  : args.element,
         $prevbtn    : args.element.find('.prev'),
-        $playbtn    : args.element.find('.play'),
+        $playbtn    : args.element.find('.play, .pause'),
         $nextbtn    : args.element.find('.next'),
         $repeatbtn  : args.element.find('#repeat'),
         $shufflebtn : args.element.find('#shuffle'),
@@ -89,12 +89,15 @@ var Player = function (args) {
         $timeline   : args.element.find('#timeline-container input'),
         $duration   : args.element.find('.duration'),
         $tracklength: args.element.find('.tracklength'),
+        $queuebtn   : args.element.find('.queue'),
+        $currentcontainer : args.element.find('#current'),
 
         socket          : args.socket,
         preventtimeline : false,
-        tracklist       : null,
+        preventSearch   : false,
+        queue           : null,
         searchlist      : null,
-        currenttrack    : {name: "asd"},
+        currenttrack    : null,
 
         enableControls : function () {
             this.$prevbtn.attr('disabled', '').removeClass('disabled');
@@ -106,24 +109,30 @@ var Player = function (args) {
             this.$playbtn.attr('disabled', 'disabled').addClass('disabled');
             this.$nextbtn.attr('disabled', 'disabled').addClass('disabled');
         },
-        play    : function (track, emit) {
-            track = track || this.currenttrack;
-            if (!track)
+        setCurrentTrack: function (track) {
+            if (!track || !track.artists) {
                 return false;
-
-            if (emit) { 
+            }
+            this.queue.setCurrent(track.href);
+            this.$currentcontainer.find('.song').text(track.name);
+            this.$currentcontainer.find('.band').text(track.artists[0].name);
+            this.currenttrack = track;
+        },
+        play    : function (track, emit) {
+            if (emit) {
                 this.socket.emit('play', track, function (err) {
-                    console.log("wut");
+                    player.$playbtn.removeClass('play').addClass('pause');
                 });
             } else {
-                if (player.queue.getTrackByURI(track.uri))
-                    player.queue.setCurrent(track.uri);
-                else {
-                    player.queue.push(track);
-                    player.queue.setCurrent(track.uri);
+                if (track) {
+                    if (!player.queue.getTrackByURI(track.href)) {
+                        player.queue.add(track);
+                    }
+                    player.setCurrentTrack(track);
+                } else {
+                    // No track specified, unpause current
                 }
-                this.currenttrack = track;
-                this.removeClass('pause').addClass('play');
+                player.$playbtn.removeClass('play').addClass('pause');
                 // Update album art
             }
         },
@@ -131,11 +140,16 @@ var Player = function (args) {
             // pause visuals
             if (emit) {
                 this.socket.emit('pause', function (err) {
-
+                    player.$playbtn.addClass('play').removeClass('pause');
                 });
             } else {
-                this.addClass('pause').removeClass('play');
+                player.$playbtn.addClass('play').removeClass('pause');
             }
+        },
+        addToQueue: function (track) {
+            this.socket.emit('queue', track, function (err) {
+
+            });
         },
         updateTime: function (time, emit) {
             if (emit) {
@@ -143,12 +157,13 @@ var Player = function (args) {
 
                 });
             } else {
-                this.$timeline.val(time);
+                var pos = (time/player.currenttrack.length)*100;
+                this.$timeline.val(pos);
             }
         },
         updateVolume: function (volume, emit) {
             if (emit) {
-                this.socket.emit('updateTime', function (err) {
+                this.socket.emit('updateVolume', function (err) {
 
                 });
             } else {
@@ -160,8 +175,6 @@ var Player = function (args) {
                 this.socket.emit('previous', function (err) {
 
                 });    
-            } else {
-                // Update the play queue
             }
             
         },
@@ -170,21 +183,38 @@ var Player = function (args) {
                 this.socket.emit('next', function (err) {
 
                 });    
-            } else {
-                // Update the play queue
             }
-            
         },
 
         init : function () {
+            this.socket.on('init', function (initData) {
+                player.currenttrack = initData.current;
+                player.queue.update(initData.queue);
+            });
+
             this.queue      = new TrackList({
-                element: this.$container.find('#playlist'),
-                tracks : args.tracks
+                element: this.$container.find('#main'),
+                tracks : args.tracks,
+                trackDoubleClick : function (event, track) {
+                    player.play(track, true);
+                }
             });
 
             this.searchlist = new TrackList({
-                element: this.$container.find('#searchfield'),
-                tracks : []
+                element: this.$container.find('#search-section'),
+                tracks : [],
+                trackDoubleClick : function (event, track) {
+                    player.addToQueue(track);
+                }
+            });
+
+            this.searchbar  = new SearchBar({
+                element: this.$container.find('#header')
+            });
+
+            this.$queuebtn.onTap(function () {
+                player.searchlist.hide();
+                player.queue.show();
             });
 
             this.$prevbtn.onTap(function () {
@@ -195,7 +225,7 @@ var Player = function (args) {
                 if (this.hasClass('play'))
                     player.play(null, true);
                 else
-                    player.pause(null, true);
+                    player.pause(true);
             });
 
             this.$nextbtn.onTap(function () {
@@ -230,18 +260,38 @@ var Player = function (args) {
                 }
             });
 
-            this.$container.on('updateTrack', function (event) {
-                var uri = $(event.target).data('uri');
-                var track = player.queue.getTrackByURI(uri);
+            this.$container.on('clickedTrack', function (event, track) {
                 player.play(track, true);
             });
 
-            this.socket.on('play', function (track) {
-                player.play(null);
+            this.$container.on('searchQuery', function (event, query) {
+                if (player.preventSearching) {
+                    return false;
+                }
+                player.preventSearching = true;
+                player.socket.emit('search', query, function (err, results) {
+                    if(err) {
+                        console.log("Error: ", err);
+                    } else {
+                        player.searchlist.update(results.track.tracks);
+                        player.queue.hide();
+                        player.searchlist.show();
+                    }
+                    
+                    player.preventSearching = false;
+                });
             });
 
-            this.socket.on('newTrack', function (track) {
-                player.play(track);
+            this.socket.on('play', function (track) {
+                if (track) {
+                    player.play(track);
+                } else {
+                    player.play(null);
+                }
+            });
+
+            this.socket.on('queue', function (tracklist) {
+                player.queue.update(tracklist);
             });
 
             this.socket.on('pause', function () {
@@ -264,77 +314,143 @@ var Player = function (args) {
     return player.init();
 },
 
+SearchBar = function (args) {
+    var searchbar = {
+        $container  : args.element,
+        $form       : args.element.find('#search'),
+        $field      : args.element.find('#search-field'),
+        $button     : args.element.find('button'),
+
+        showResults : function (results) {
+            this.$container.trigger('searchResults', results);
+        },
+        init    : function () {
+            searchbar.$form.on('submit', function (event) {
+                event.preventDefault();
+                var query = searchbar.$field.val();
+                searchbar.$container.trigger('searchQuery', query);
+            });
+
+            return searchbar;
+        }
+    }
+
+    return searchbar.init();
+},
+
 TrackList = function (args) {
     var tracklist = {
         $container  : args.element,
         $currentart : args.element.find('.queue-cover'),
-        $list  : args.element.find('.tracklist'),
-        tracks      : args.tracks,
+        $list       : args.element.find('.tracklist'),
+        tracks      : args.tracks || [],
+
+        trackDoubleClick: args.trackDoubleClick || function () {},
 
         show        : function () {
-            this.$container.show();
+            this.$container.removeClass("is-hidden");
         },
         hide        : function () {
-            this.$container.hide();
+            this.$container.addClass("is-hidden");
         },
         getTrackByURI: function (URI) {
-            var returnObj = null;
-            $.each(this.tracks, function (i, track) {
-                if (track.uri === URI) {
+            var returnObj = false;
+            $.each(tracklist.tracks, function (i, track) {
+                if (track.href === URI) {
+                    var DOMTrack = tracklist.getDOMTrack(track.href);
                     returnObj = {
-                        track: track, 
-                        index: i
+                        track   : track, 
+                        index   : i,
+                        DOM     : DOMTrack
                     };
                 }
             });
             return returnObj;
         },
-
-        update      : function (tracks) {
-            this.$list.children().remove();
-            $.each(tracks, function (i, track) {
-                var domString, 
-                    track, 
-                    starred = (track.starred) ? "stared" : "";
-
-                domString += '<tr>';
-                domString +=    '<td class="star"><a class="'+starred+'" href="#">&#9733;</a></td>';
-                domString +=    '<td><a rel="song" href="'+track.uri+'">'+track.name+'</a></td>';
-                domString +=    '<td></td>';
-                domString +=    '<td><a href="#">'+track.artist+'</a></td>';
-                domString +=    '<td class="right">'+track.duration+'</td>';
-                domString +=    '<td><a href="#">'+track.album+'</a></td>';
-                domString +=    '<td></td>';
-                domString += '</tr>';
-                $track = $(domString);
-                $track.data('track', track);
-                tracks[i].DOM = $track;
-                tracklist.$list.append($track);
+        getDOMTrack     : function (uri) {
+            var returnObj = false;
+            tracklist.$list.children().each(function (i, DOMTrack) {
+                if (DOMTrack.id === uri) {
+                    returnObj = $(DOMTrack);
+                    return false;
+                }
             });
-
-            this.tracks = tracks;
+            return returnObj;
+        },
+        _DOMTrack   : function (track) {
+            var domString, 
+                track, 
+                starred = (track.starred) ? "stared" : "",
+                artist  = (track.artists) ? track.artists[0].name : "unknown",
+                duration = getTrackTime(+track.length);
+            domString += '<tr id="'+track.href+'" class="track">';
+            domString +=    '<td class="star"><a class="'+starred+'" href="#">&#9733;</a></td>';
+            domString +=    '<td><a rel="song" href="'+track.href+'">'+track.name+'</a></td>';
+            domString +=    '<td></td>';
+            domString +=    '<td><a href="#">'+artist+'</a></td>';
+            domString +=    '<td class="right">'+duration+'</td>';
+            domString +=    '<td><a href="'+track.album.href+'">'+track.album.name+'</a></td>';
+            domString +=    '<td></td>';
+            domString += '</tr>';
+            $track = $(domString);
+            $track.data('track', track);
+            return $track;
         },
 
+        add         : function (track) {
+            var $track = this._DOMTrack(track);
+            this.$list.append($track);
+            this.tracks.push(track);
+        },
+        
         remove  : function (track) {
             var trackObj = tracklist.getTrackByURI(track.uri);
             if (trackObj) {
                 var trackIndex = trackObj.index;
                 tracklist.tracks.splice(trackIndex+1, 1);
+                trackObj.DOM.remove();
             } else {
                 console.log("Track not found in list");
                 return false;
             }
         },
+        
+        update      : function (tracks) {
+            this.$list.children().remove();
+            this.tracks.splice(0, this.tracks.length-1);
+            $.each(tracks, function (i, track) {
+                var $track = tracklist._DOMTrack(track),
+                    track = tracks[i];
+                tracklist.$list.append($track);
+                tracklist.tracks.push(track);
+            });
+        },
+
         setCurrent : function (uri) {
-            var track = this.getTrackByURI(uri).track;
-            track.DOM.addClass('current');
+            var trackObj = this.getTrackByURI(uri);
+            tracklist.$list.children().removeClass('current');
+            if(trackObj)
+                trackObj.DOM.addClass('current');
         },
 
         init : function () {
-            tracklist.$list.onTap(function (event) {
-                var $target = $(event.target);
+            var clickEvent = {};
+            tracklist.$list.on('click', 'tr.track', function (event) {
+                event.preventDefault();
+                var $target = $(this);
                 if($target.hasClass('track')) {
-                    $target.trigger('updateTrack');
+                    var track = $target.data('track');
+                    if (clickEvent.$target && clickEvent.$target.data('track').href === track.href) {
+                        tracklist.trackDoubleClick.call(this, event, track);
+                    } else {
+                        tracklist.$list.children().removeClass('current');
+                        $target.addClass('current');
+                        clickEvent.$target = $target;
+                        clearTimeout(clickEvent.doubleTimeout);
+                        clickEvent.doubleTimeout = setTimeout(function () {
+                            clickEvent.$target = false;
+                        }, 400);
+                    }
                 }
             });
 

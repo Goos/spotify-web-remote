@@ -1,17 +1,20 @@
 footer#footer
     section#player
         button.prev Previous 
-        button.play Play 
+        if player.playing
+            button.pause Pause
+        else
+            button.play Play
         button.next Next 
         div#volume-container.high
-            input(type='range', max='100').volume
+            input(type='range', max='100', value='#{player.volume}').volume
         div#timeline-container
-            input(type='range', min='0')
+            input(type='range', min='0', value='0')
             span.duration 0:00
             span.tracklength 0:00
         div.playmode
-            input(type='checkbox')#shuffle
+            input(type='checkbox', checked=player.shuffle)#shuffle
             label(for='shuffle').shuffle Shuffle
-            input(type='checkbox')#repeat
+            input(type='checkbox', checked=player.repeat)#repeat
             label(for='repeat').repeat Repeat 
             

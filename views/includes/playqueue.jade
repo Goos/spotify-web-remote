@@ -17,17 +17,37 @@ section#main
                     th Album
                     th
             tbody.tracklist
-                if locals.queue
-                    each track in queue.tracks
-                        tr(data-uri='#{track.uri}').track
+                - if (typeof queue !== 'undefined' && queue.length > 0) {
+                    each track in queue
+                        tr.track
                             td.star
-                                a(href='#star').stared &#9733;
+                                a(href='#star') &#9733;
                             td
-                                a(rel='song', href='#{track.uri}') #{track.name}
+                                a(rel='song', href='#{track.href}') #{track.name}
                             td
-                                a(href='#') #{track.artist}
-                            td.right #{track.duration}
+                            td 
+                                a(href='#{track.artists[0].href}') #{track.artists[0].name}
+                            td.right #{track.length}
                             td
-                                a(href='#') #{track.album}
+                                a(href='#{track.album.href}') #{track.album.name}
                             td
-                                
+                - }
+section#search-section.is-hidden
+    header.header
+        h1 Search
+    article.search-cover
+        figure.coverart
+            img(src='#')
+                img(src='#{playing.queuecover}')
+    section.playlist.search
+        table
+            thead
+                tr
+                    th(align='center')
+                    th Track
+                    th Get
+                    th Artist
+                    th.right Time
+                    th Album
+                    th
+            tbody.tracklist

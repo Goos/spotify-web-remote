@@ -2,26 +2,28 @@ section#playlists
     nav
         ul.playlists
             li
-                a(href='#').library Library
+                a(href='#').queue Queue
             li
                 a(href='#').starred Starred 
-            if locals.playlists
+            - if (typeof playlists !== 'undefined') {
                 each playlist in playlists
                     li
                         a(href='#').#{playlist.name} #{playlist.name}
+            - }
         ul.new
             li
                 a(href='#').new-list New Playlist 
     section#current
         a(href='#')
             figure
-                if locals.playing
-                    img(src='#{playing.cover}')
+                - if (currentTrack && typeof currentTrack !== 'undefined') {
+                    img(src='#{currentTrack.cover}')
                     figcaption
-                    strong.song #{playing.track}
-                    span.band #{playing.artist}
-                else
+                    strong.song #{currentTrack.name}
+                    span.band #{currentTrack.artists[0].name}
+                - } else {
                     img(src='/playing_default.jpg')
                     figcaption
                     strong.song No track
                     span.band No artist
+                - }

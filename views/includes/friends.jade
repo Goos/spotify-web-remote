@@ -3,7 +3,8 @@ aside#aside
         header
             h2 People
         ul
-            if locals.friends
+            - if (typeof friends !== 'undefined') {
                 each friend in friends
                     li
                         a(href='#') #{friend.name}
+            - }

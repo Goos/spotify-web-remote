@@ -1,11 +1,20 @@
 var express         = require("express"),
     sio             = require("socket.io"),
     http            = require("http"),
+    helper          = require("./helper"),
     spotify         = require("spotify-node-applescript"),
-    spotifySearch   = require("spotify");
+    spotifyAPI      = require("spotify"),
+    tracklist       = require("./tracklist");
 
-var app     = express();
-var server  = http.createServer(app);
+var app             = express();
+var server          = http.createServer(app);
+var spotifyClient   = {};
+
+spotifyClient.queue     = new tracklist();
+spotifyClient.volume    = 100;
+spotifyClient.state     = "paused";
+spotifyClient.repeat    = false;
+spotifyClient.shuffle   = false;
 
 app.configure(function () {
     app.set('port', 5000);
@@ -18,27 +27,168 @@ app.configure(function () {
 });
 
 app.get('/', function (req, res) {
-    var options = {};
+    var options = {
+        player  : {
+            volume  : spotifyClient.volume,
+            playing : spotifyClient.state === "playing",
+            shuffle : spotifyClient.shuffle,
+            repeat  : spotifyClient.repeat
+        },
+        currentTrack: spotifyClient.queue.getCurrentTrack(),
+        queue       : spotifyClient.queue.getTracks()
+    };
+
     res.render('index', options);
 });
 
-var sio = sio.listen(server);
+var sio = sio.listen(server, {log: false});
 
 sio.on('connection', function (socket) {
-    socket.on('play', function (track) {
+    var currTrack = spotifyClient.queue.getCurrentTrack(),
+        queue   = spotifyClient.queue.getTracks();
+    if (currTrack) {
+        socket.emit('init', {queue: queue, current: currTrack});
+    }
 
+    socket.on('play', function (track, callback) {
+        if (track) {
+            spotifyClient.queue.setTrack(track);
+            var currentTrack = spotifyClient.queue.getCurrentTrack();
+            spotify.playTrack(currentTrack.href, function () {
+                helper.logTrack(currentTrack);
+                socket.emit('play', currentTrack, function () {
+
+                });
+                callback();
+            });
+        } else {
+            var currentTrack = spotifyClient.queue.getCurrentTrack();
+            spotify.play(function () {
+                helper.logTrack(currentTrack);
+                socket.emit('play', currentTrack, function () {
+
+                });
+                callback();
+            });
+        }
     });
 
-    socket.on('pause', function () {
-
+    socket.on('pause', function (callback) {
+        console.log("Paused");
+        spotify.pause(function () {
+            callback();
+        });
     });
 
-    socket.on('update', function () {
+    socket.on('next', function (callback) {
+        var track = spotifyClient.queue.next();
+        spotify.playTrack(track.href, function () {
+            sio.sockets.emit('play', track);
+            callback();
+        });
+    });
 
+    socket.on('previous', function (callback) {
+        var track = spotifyClient.queue.prev();
+        spotify.playTrack(track.href, function () {
+            sio.sockets.emit('play', track);
+            callback();
+        });
+    });
+
+    socket.on('queue', function (track, callback) {
+        if (track && track.href) {
+            spotifyClient.queue.add(track);
+            callback();
+            var queue = spotifyClient.queue.getTracks();
+            sio.sockets.emit('queue', queue);
+        }
+        else
+            callback("Error: must specify a track to queue");
+    });
+
+    socket.on('search', function (query, callback) {
+        var queries = [
+            {type: "track", query: query},
+            {type: "album", query: query},
+            {type: "artist", query: query}
+        ], 
+            counter = 0,
+            results = {};
+
+        for(var i = 0; i < queries.length; i++) {
+            spotifyAPI.search(queries[i], handleQueries);
+        }
+        function handleQueries (err, response) {
+            counter++;
+            if (err)
+                callback(err);
+            else {
+                var type = response.info.type;
+                results[type] = response;
+            }
+            if (counter === 3) {
+                callback(null, results);
+            }
+        }
     });
 });
 
+var poller = setInterval(function () {
+    spotify.getState(function (err, status) {
+        if (!status)
+            return false;
+        if (status.volume !== spotifyClient.volume) {
+            sio.sockets.emit('updateVolume', status.volume);
+            spotifyClient.volume = status.volume;
+        }
+        if (status.state !== spotifyClient.state) {
+            if (status.state === "playing") {
+                var currentTrack = spotifyClient.queue.getCurrentTrack();
+                sio.sockets.emit('play', currentTrack);
+            }
+            else
+                sio.sockets.emit('pause');
+            spotifyClient.state = status.state;
+        }
+        if (status.state === "playing") {
+            sio.sockets.emit('updateTime', status.position);
+        }
+    });
+    spotify.getTrack(function (err, track) {
+        if(err)
+            return console.log(err);
+        var currentTrack = spotifyClient.queue.getCurrentTrack();
+        if (!currentTrack || !track || spotifyClient.state !== "playing")
+            return false;
+        if (currentTrack.href !== track.spotify_url) {
+            var newTrack = spotifyClient.queue.next();
+            if (!newTrack) {
+                if (spotifyClient.repeat) {
+                    var newTrack = spotifyClient.queue.getFirstTrack();
+                    spotify.playTrack(newTrack.href, function () {
+                        sio.sockets.emit('play', newTrack);
+                    });
+                } else {
+                    spotify.pause(function () {
+                        spotifyClient.state = "paused";
+                    });
+                    console.log("Stopped");
+                    sio.sockets.emit('pause');
+                }
+            } else {
+                spotify.playTrack(newTrack.href, function () {
+                    sio.sockets.emit('play', newTrack);
+                });
+            }
+        }
+    });
+
+    // sio.sockets.emit()
+}, 1000);
+
 server.listen(app.get('port'), function () {
     console.log('Listening on ' + app.get('port'));
+    spotify.open();
 });
 console.log("Server started, brofessor.");

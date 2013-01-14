@@ -157,7 +157,7 @@ var Player = function (args) {
 
                 });
             } else {
-                var pos = (time/player.currenttrack.length)*100;
+                var pos = (time/player.currenttrack.length)*1000;
                 this.$timeline.val(pos);
             }
         },
@@ -458,7 +458,21 @@ TrackList = function (args) {
         }
     };
     return tracklist.init();
+},
+
+UserList = function () {
+    var userlist = {
+
+
+        init : function () {
+            return userlist.init();
+        }
+    }
+
+    return userlist;
 };
+
+
 
 function init () {
     var socket = io.connect('http://localhost:5000');
@@ -476,63 +490,5 @@ function init () {
 }
 
 $(init());
-
-
-// Object.prototype.resizable = function(sibling, handles){
-//     for (var i = 0; i < handles.length; i++) {
-//         var obj = this,
-//         direction = handles[i],
-//         interval,
-//         handle = document.createElement('span').prop({'draggable':'true','className':direction+'-resize'}).appendTo(obj),
-//         start;
-//         handle.addEventListener('dragstart', function (event) {
-//             start = event.pageX;
-//             this.addClass('dragging');
-//         }, false).addEventListener('dragend', function (event) {
-//             this.removeClass('dragging');
-//             if(direction == 'w'){
-//                 obj.style.width = aside.clientWidth+(start-event.pageX)+'px';
-//                 sibling.style.right = obj.style.width;
-//             } else if(direction == 'e'){
-//                 obj.style.width = aside.clientWidth+(event.pageX-start)+'px';
-//                 sibling.style.left = obj.style.width;
-//             }
-//         });     
-//     }
-// };
-// document.addEventListener('DOMContentLoaded', function(){
-//     var player = new Player('#player');
-//     document.body.addEventListener('click', function(e){
-//         if(e.target.tagName === 'A' && e.target.rel === 'song'){
-//             e.preventDefault();
-//             player.loadSrc(e.target.href, function(){
-//                 player.setCurrent(e.target.parentNode.parentNode);
-//                 player.play();
-//             });
-//         }
-//     }).addEventListener('dragover', function(e){
-//         e.preventDefault();
-//         this.addClass('dragover');
-//         return false;
-//     }).addEventListener('dragend', function(e){
-//         e.preventDefault();
-//         this.removeClass('dragover');
-//         return false;
-//     }).addEventListener('drop', function(e){
-//         e.preventDefault();
-//         var file = e.dataTransfer.files[0];
-//         var reader = new FileReader();
-//         reader.onload = function(ev){
-//             alert(ev.target.result);
-//         }
-//         reader.readAsDataURL(file);
-//         return false;               
-//     }, false);
-//     var main = document.getElementById('main'),
-//     nav = document.getElementById('playlists').resizable(main, ['e']),
-//     aside = document.getElementById('aside').resizable(main, ['w']);
-// }, false);
-
-
 
 })(window.Remote = window.Remote || {}, jQuery, window);

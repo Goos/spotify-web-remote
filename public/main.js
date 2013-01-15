@@ -475,7 +475,7 @@ UserList = function () {
 
 
 function init () {
-    var socket = io.connect('http://localhost:5000');
+    var socket = io.connect('http://172.28.54.39:3000');
     socket.on('connect', function () {
         Remote.player = new Player({
             element: $('.spotify-remote'), 

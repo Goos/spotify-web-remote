@@ -17,7 +17,7 @@ spotifyClient.repeat    = false;
 spotifyClient.shuffle   = false;
 
 app.configure(function () {
-    app.set('port', 5000);
+    app.set('port', 3000);
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
     app.set('view options', {

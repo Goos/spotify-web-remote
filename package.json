@@ -1,0 +1,11 @@
+{
+    "name": "spotify-web-remote",
+    "version": "0.0.1",
+    "dependencies": {
+        "express": "3.0.6",
+        "socket.io": "0.9.13",
+        "spotify": "0.2.0",
+        "spotify-node-applescript": "0.1.0",
+        "jade": "0.28.0"
+    }   
+}

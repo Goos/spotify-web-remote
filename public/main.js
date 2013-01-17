@@ -190,6 +190,7 @@ var Player = function (args) {
             this.socket.on('init', function (initData) {
                 player.currenttrack = initData.current;
                 player.queue.update(initData.queue);
+                player.queue.setCurrent(player.currenttrack.href);
             });
 
             this.queue      = new TrackList({
@@ -429,8 +430,9 @@ TrackList = function (args) {
         setCurrent : function (uri) {
             var trackObj = this.getTrackByURI(uri);
             tracklist.$list.children().removeClass('current');
-            if(trackObj)
+            if(trackObj) {
                 trackObj.DOM.addClass('current');
+            }
         },
 
         init : function () {
@@ -443,8 +445,8 @@ TrackList = function (args) {
                     if (clickEvent.$target && clickEvent.$target.data('track').href === track.href) {
                         tracklist.trackDoubleClick.call(this, event, track);
                     } else {
-                        tracklist.$list.children().removeClass('current');
-                        $target.addClass('current');
+                        tracklist.$list.children().removeClass('selected');
+                        $target.addClass('selected');
                         clickEvent.$target = $target;
                         clearTimeout(clickEvent.doubleTimeout);
                         clickEvent.doubleTimeout = setTimeout(function () {

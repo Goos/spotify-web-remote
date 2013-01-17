@@ -161,6 +161,7 @@ var poller = setInterval(function () {
                     if (spotifyClient.repeat) {
                         var firstTrack = spotifyClient.queue.setTrack(0);
                         spotify.playTrack(firstTrack.href, function () {
+                            helper.logTrack(firstTrack);
                             sio.sockets.emit('play', firstTrack);
                         });
                     } else {
@@ -172,6 +173,7 @@ var poller = setInterval(function () {
                     }
                 } else {
                     spotify.playTrack(nextTrack.href, function () {
+                        helper.logTrack(nextTrack);
                         sio.sockets.emit('play', nextTrack);
                     });    
                 }

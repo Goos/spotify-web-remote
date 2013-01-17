@@ -13,6 +13,7 @@ var spotifyClient   = {};
 spotifyClient.queue     = new tracklist();
 spotifyClient.volume    = 100;
 spotifyClient.state     = "paused";
+spotifyClient.timeline  = 0;
 spotifyClient.repeat    = false;
 spotifyClient.shuffle   = false;
 
@@ -152,39 +153,34 @@ var poller = setInterval(function () {
             spotifyClient.state = status.state;
         }
         if (status.state === "playing") {
-            sio.sockets.emit('updateTime', status.position);
-        }
-    });
-    spotify.getTrack(function (err, track) {
-        if(err)
-            return console.log(err);
-        var currentTrack = spotifyClient.queue.getCurrentTrack();
-        if (!currentTrack || !track || spotifyClient.state !== "playing")
-            return false;
-        if (currentTrack.href !== track.spotify_url) {
-            var newTrack = spotifyClient.queue.next();
-            if (!newTrack) {
-                if (spotifyClient.repeat) {
-                    var newTrack = spotifyClient.queue.getFirstTrack();
-                    spotify.playTrack(newTrack.href, function () {
-                        sio.sockets.emit('play', newTrack);
-                    });
+            spotifyClient.timeline = status.position;
+            var currentTrack = spotifyClient.queue.getCurrentTrack();
+            if (currentTrack && spotifyClient.timeline >= currentTrack.length-2) {
+                var nextTrack = spotifyClient.queue.next();
+                if (!nextTrack) {
+                    if (spotifyClient.repeat) {
+                        var firstTrack = spotifyClient.queue.setTrack(0);
+                        spotify.playTrack(firstTrack.href, function () {
+                            sio.sockets.emit('play', firstTrack);
+                        });
+                    } else {
+                        spotify.pause(function () {
+                            spotifyClient.state = "paused";
+                        });
+                        console.log("Stopped");
+                        sio.sockets.emit('pause');
+                    }
                 } else {
-                    spotify.pause(function () {
-                        spotifyClient.state = "paused";
-                    });
-                    console.log("Stopped");
-                    sio.sockets.emit('pause');
+                    spotify.playTrack(nextTrack.href, function () {
+                        sio.sockets.emit('play', nextTrack);
+                    });    
                 }
+                
             } else {
-                spotify.playTrack(newTrack.href, function () {
-                    sio.sockets.emit('play', newTrack);
-                });
+                sio.sockets.emit('updateTime', status.position);
             }
         }
     });
-
-    // sio.sockets.emit()
 }, 1000);
 
 server.listen(app.get('port'), function () {

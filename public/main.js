@@ -269,6 +269,9 @@ var Player = function (args) {
             this.$batchqueue.onTap(function (event) {
                 event.preventDefault();
                 event.stopPropagation();
+                if ($('.queue-modal').length) {
+                    return false;
+                }
                 var domstring = '<div class="modal queue-modal">'+
                     '<textarea cols="30" rows="10"></textarea>'+
                     '<button id="submit" type="submit">Queue</button>'+

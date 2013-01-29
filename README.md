@@ -1,3 +1,5 @@
+![Spotify.jpg](/public/example.png)
+
 #Spotify web remote v0.01
 **A socket-based spotify remote, controlling spotify through applescript.**
 

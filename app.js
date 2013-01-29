@@ -1,10 +1,10 @@
 var express         = require("express"),
     sio             = require("socket.io"),
     http            = require("http"),
-    helper          = require("./helper"),
+    helper          = require("./lib/helper"),
     spotify         = require("spotify-node-applescript"),
     spotifyAPI      = require("spotify"),
-    tracklist       = require("./tracklist");
+    tracklist       = require("./lib/tracklist");
 
 var app             = express();
 var server          = http.createServer(app);

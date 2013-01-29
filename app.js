@@ -18,7 +18,7 @@ spotifyClient.repeat    = false;
 spotifyClient.shuffle   = false;
 
 app.configure(function () {
-    app.set('port', 3000);
+    app.set('port', 3500);
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
     app.set('view options', {
@@ -48,7 +48,11 @@ sio.on('connection', function (socket) {
     var currTrack = spotifyClient.queue.getCurrentTrack(),
         queue   = spotifyClient.queue.getTracks();
     if (currTrack) {
-        socket.emit('init', {queue: queue, current: currTrack});
+        socket.emit('init', {
+            queue: queue, 
+            current: currTrack, 
+            playing: spotifyClient.state === "playing"
+        });
     }
 
     socket.on('play', function (track, callback) {

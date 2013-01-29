@@ -98,6 +98,7 @@ var Player = function (args) {
         queue           : null,
         searchlist      : null,
         currenttrack    : null,
+        playing         : false,
 
         enableControls : function () {
             this.$prevbtn.attr('disabled', '').removeClass('disabled');
@@ -134,6 +135,7 @@ var Player = function (args) {
                 }
                 player.$playbtn.removeClass('play').addClass('pause');
                 // Update album art
+                player.playing = true;
             }
         },
         pause   : function (emit) {
@@ -144,6 +146,7 @@ var Player = function (args) {
                 });
             } else {
                 player.$playbtn.addClass('play').removeClass('pause');
+                player.playing = false;
             }
         },
         addToQueue: function (track) {
@@ -191,6 +194,7 @@ var Player = function (args) {
                 player.currenttrack = initData.current;
                 player.queue.update(initData.queue);
                 player.queue.setCurrent(player.currenttrack.href);
+                player.playing = initData.playing;
             });
 
             this.queue      = new TrackList({
@@ -265,6 +269,18 @@ var Player = function (args) {
                 player.play(track, true);
             });
 
+            $(window).on('keyup', function (event) {
+                if (!player.searchbar.hasFocus) {
+                    if (event.keyCode && event.keyCode === 32) {
+                        if (player.playing) {
+                            player.pause(true);
+                        } else {
+                            player.play(null, true);
+                        }
+                    }
+                }
+            });
+
             this.$container.on('searchQuery', function (event, query) {
                 if (player.preventSearching) {
                     return false;
@@ -321,11 +337,20 @@ SearchBar = function (args) {
         $form       : args.element.find('#search'),
         $field      : args.element.find('#search-field'),
         $button     : args.element.find('button'),
+        hasFocus    : false,
 
         showResults : function (results) {
             this.$container.trigger('searchResults', results);
         },
         init    : function () {
+            searchbar.$field.on('focus', function () {
+                searchbar.hasFocus = true;
+            });
+
+            searchbar.$field.on('blur', function () {
+                searchbar.hasFocus = false;
+            });
+
             searchbar.$form.on('submit', function (event) {
                 event.preventDefault();
                 var query = searchbar.$field.val();

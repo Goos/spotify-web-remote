@@ -91,6 +91,7 @@ var Player = function (args) {
         $tracklength: args.element.find('.tracklength'),
         $queuebtn   : args.element.find('.queue'),
         $currentcontainer : args.element.find('#current'),
+        $batchqueue : args.element.find('.batch-queue a'),
 
         socket          : args.socket,
         preventtimeline : false,
@@ -263,6 +264,35 @@ var Player = function (args) {
                     var currentTime = this.val();
                     player.updateTime(currentTime, true);
                 }
+            });
+
+            this.$batchqueue.onTap(function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                var domstring = '<div class="modal queue-modal">'+
+                    '<textarea cols="30" rows="10"></textarea>'+
+                    '<button id="submit" type="submit">Queue</button>'+
+                    '<button id="cancel" type="cancel">Cancel</button>'+
+                    '</div>';
+                var $modal = $(domstring);
+                $modal.appendTo($('header.header'));
+                $modal.find('#submit').onTap(function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var field  = $modal.find('textarea'),
+                        tracks = field.val().split('\n');
+                    if(tracks.length > 0) {
+                        player.addToQueue(tracks);
+                        $modal.remove();
+                    } else {
+                        field.val("Fill this field with line-separated spotify-URI:s");
+                    }
+                });
+                $modal.find('#cancel').onTap(function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    $modal.remove();
+                });
             });
 
             this.$container.on('clickedTrack', function (event, track) {

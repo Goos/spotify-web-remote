@@ -102,15 +102,17 @@ function TrackList (tracks) {
     this.add = function (tracks, position) {
         if (!tracks)
             return false;
-        if (tracks.isArray) {
-            forEach(tracks, function (index, track) {
+        if (Array.isArray(tracks)) {
+            var i = 0;
+            for (var track in tracks) {
                 // in case of position === 0
                 if (typeof position === "number") {
                     arrays.queue.splice(position+i, 0, track);
                 } else {
                     arrays.queue.push(track);
                 }
-            });
+                i++;
+            }
         } 
         else {
             if (typeof position === "number") {
@@ -154,9 +156,9 @@ function TrackList (tracks) {
      * @return {Array} The empty queue
      */
     this.clear   = function () {
-        forEach(arrays, function (key, array) {
+        for(var array in arrays) {
             array.splice(0, array.length-1);
-        });
+        }
         
         currentTrack = null;
 

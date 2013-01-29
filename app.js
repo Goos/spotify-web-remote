@@ -102,14 +102,39 @@ sio.on('connection', function (socket) {
     });
 
     socket.on('queue', function (track, callback) {
-        if (track && track.href) {
-            spotifyClient.queue.add(track);
-            callback();
-            var queue = spotifyClient.queue.getTracks();
-            sio.sockets.emit('queue', queue);
+        if (track) {
+            if (Array.isArray(track)) {
+                var index = 0, numberOfTracks = track.length;
+                track.forEach(function (trackURI) {
+                    var trackID = trackURI.split(':')[2];
+                    spotifyAPI.lookup({
+                        type: "track",
+                        id  : trackID
+                    }, function (err, response) {
+                        index++;
+                        if (err) {
+                            console.log("Error with batch queue: " + err);
+                            return false;
+                        }
+                        var trackData = response.track;
+                        spotifyClient.queue.add(trackData);
+                        if (index === numberOfTracks) {
+                            var queue = spotifyClient.queue.getTracks();
+                            sio.sockets.emit('queue', queue);
+                        }
+                    });
+                });
+                callback();
+            } else {
+                spotifyClient.queue.add(track);
+                callback();
+                var queue = spotifyClient.queue.getTracks();
+                sio.sockets.emit('queue', queue);    
+            }
         }
-        else
+        else {
             callback("Error: must specify a track to queue");
+        }
     });
 
     socket.on('search', function (query, callback) {

@@ -473,7 +473,44 @@ header h1{
 	background: -ms-linear-gradient(top, #404040 0%,#373737 100%);
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#404040', endColorstr='#373737',GradientType=0 );
 	background: linear-gradient(top, #404040 0%,#373737 100%);
+	margin-right: 3px;
 }
+
+header h1.batch-queue {
+	padding: 0;
+}
+
+.batch-queue a {
+	width: 33px;
+	height: 100%;
+	display: block;
+	text-align: center;
+}
+
+.queue-modal {
+	position: relative;
+	z-index: 10;
+	max-width: 400px;
+	min-width: 320px;
+	background: #474747;
+	border: 1px solid #282828;
+	border-radius: 2px;
+	overflow: hidden;
+	padding: 3px;
+}
+
+.queue-modal textarea {
+	float: left;
+	clear: both;
+	resize: none;
+	outline: none;
+	background: #efefef;
+}
+
+.queue-modal button {
+	float: left;
+}
+
 table{
 	width:100%;
 	margin:0 0 20px;

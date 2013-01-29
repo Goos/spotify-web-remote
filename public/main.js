@@ -278,7 +278,7 @@ var Player = function (args) {
                     '<button id="cancel" type="cancel">Cancel</button>'+
                     '</div>';
                 var $modal = $(domstring);
-                $modal.appendTo($('header.header'));
+                $modal.appendTo($('#main header.header'));
                 $modal.find('#submit').onTap(function (event) {
                     event.preventDefault();
                     event.stopPropagation();

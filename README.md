@@ -1,4 +1,4 @@
-![Spotify.jpg](/Goos/spotify-web-remote/master/public/example.png?raw=true)
+![Spotify.jpg](/public/example.png?raw=true)
 
 #Spotify web remote v0.01
 **A socket-based spotify remote, controlling spotify through applescript.**

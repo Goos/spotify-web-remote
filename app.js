@@ -4,11 +4,44 @@ var express         = require("express"),
     helper          = require("./lib/helper"),
     spotify         = require("spotify-node-applescript"),
     spotifyAPI      = require("spotify"),
-    tracklist       = require("./lib/tracklist");
+    tracklist       = require("./lib/tracklist"),
+    spotifyWeb      = require("spotify-web"),
+    lame            = require("lame"),
+    Speaker         = require("speaker");
 
 var app             = express();
 var server          = http.createServer(app);
 var spotifyClient   = {};
+var decoder         = new lame.Decoder();
+var speaker         = new Speaker();
+var credentials     = { username: "gooos", password: "Ho11yw00d" };
+
+var lecurrTrack;
+
+spotifyWeb.login(credentials.username, credentials.password, function (err, spot) {
+    if (err) throw err;
+    spot.get("spotify:track:4mm2fuo5UJNscczsxtAZvb", function (err, track) {
+        lecurrTrack = track;
+        track.play()
+            .pipe(decoder)
+            .pipe(speaker)
+            .on('finish', function () {
+
+            });
+    });
+    setTimeout(function () {
+        speaker.emit('flush');
+        decoder = new lame.Decoder();
+        spot.get("spotify:track:58joME7Et6HgvcJVfctBn4", function (err, track) {
+            track.play()
+                .pipe(decoder)
+                .pipe(speaker)
+                .on('finish', function () {
+
+                });
+        }); 
+    }, 3000);
+});
 
 spotifyClient.queue     = new tracklist();
 spotifyClient.volume    = 100;

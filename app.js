@@ -12,35 +12,31 @@ var express         = require("express"),
 var app             = express();
 var server          = http.createServer(app);
 var spotifyClient   = {};
-var decoder         = new lame.Decoder();
 var speaker         = new Speaker();
 var credentials     = { username: "gooos", password: "Ho11yw00d" };
-
-var lecurrTrack;
 
 spotifyWeb.login(credentials.username, credentials.password, function (err, spot) {
     if (err) throw err;
     spot.get("spotify:track:4mm2fuo5UJNscczsxtAZvb", function (err, track) {
-        lecurrTrack = track;
         track.play()
-            .pipe(decoder)
+            .pipe(new lame.Decoder())
             .pipe(speaker)
             .on('finish', function () {
 
+            })
+            .on('error', function (err) {
+                console.log(err);
             });
     });
-    setTimeout(function () {
-        speaker.emit('flush');
-        decoder = new lame.Decoder();
-        spot.get("spotify:track:58joME7Et6HgvcJVfctBn4", function (err, track) {
-            track.play()
-                .pipe(decoder)
-                .pipe(speaker)
-                .on('finish', function () {
+    speaker.close();
+    spot.get("spotify:track:58joME7Et6HgvcJVfctBn4", function (err, track) {
+        track.play()
+            .pipe(new lame.Decoder())
+            .pipe(new Speaker())
+            .on('finish', function () {
 
-                });
-        }); 
-    }, 3000);
+            });
+    }); 
 });
 
 spotifyClient.queue     = new tracklist();

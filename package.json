@@ -7,8 +7,10 @@
         "spotify": "0.2.0",
         "spotify-node-applescript": "0.1.0",
         "jade": "0.28.0",
+        
         "spotify-web": "~0.1.0",
         "lame": "~1.0.2",
-        "speaker": "~0.0.9"
+        "speaker": "~0.0.9",
+        "xml2js": "~0.2.6"
     }   
 }

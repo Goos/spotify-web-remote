@@ -4,8 +4,8 @@ var express         = require("express"),
     helper          = require("./lib/helper"),
     spotify         = require("spotify-node-applescript"),
     spotifyAPI      = require("spotify"),
-    tracklist       = require("./lib/tracklist"),
-    spotifyWeb      = require("spotify-web"),
+    tracklist       = require("./lib/queue"),
+    SpotifyClient   = require("./lib/spotify-client"),
     lame            = require("lame"),
     Speaker         = require("speaker");
 
@@ -15,29 +15,18 @@ var spotifyClient   = {};
 var speaker         = new Speaker();
 var credentials     = { username: "gooos", password: "Ho11yw00d" };
 
-spotifyWeb.login(credentials.username, credentials.password, function (err, spot) {
-    if (err) throw err;
-    spot.get("spotify:track:4mm2fuo5UJNscczsxtAZvb", function (err, track) {
-        track.play()
-            .pipe(new lame.Decoder())
-            .pipe(speaker)
-            .on('finish', function () {
+var client = new SpotifyClient();
 
-            })
-            .on('error', function (err) {
-                console.log(err);
-            });
+client.login(credentials.username, credentials.password, function () {
+    client.search({
+        type: "all",
+        query: "soilwork"
+    }, function (err, results) {
+        client.queue.add(results.tracks);
+        client.play();
     });
-    speaker.close();
-    spot.get("spotify:track:58joME7Et6HgvcJVfctBn4", function (err, track) {
-        track.play()
-            .pipe(new lame.Decoder())
-            .pipe(new Speaker())
-            .on('finish', function () {
-
-            });
-    }); 
 });
+
 
 spotifyClient.queue     = new tracklist();
 spotifyClient.volume    = 100;
@@ -156,6 +145,8 @@ sio.on('connection', function (socket) {
                 callback();
             } else {
                 spotifyClient.queue.add(track);
+                client.queue.add(track);
+                console.log(client.queue.tracks());
                 callback();
                 var queue = spotifyClient.queue.getTracks();
                 sio.sockets.emit('queue', queue);    
